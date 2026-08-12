@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.5
+          run_install: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm format:check
+      - run: pnpm verify:map-data
+      - run: pnpm lint
+      - run: pnpm test
+      - run: pnpm build
+
+  container:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose config --quiet
+        env:
+          JWT_SECRET: ci-only-0123456789abcdef0123456789abcdef
+          POSTGRES_PASSWORD: ci-only-password
+      - run: docker build --target backend --tag playstead-backend:ci .
+      - run: docker build --target frontend --tag playstead-frontend:ci .

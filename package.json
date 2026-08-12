@@ -1,0 +1,39 @@
+{
+  "name": "playstead",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "pnpm --parallel --filter @playstead/backend --filter @playstead/frontend dev",
+    "dev:backend": "pnpm --filter @playstead/backend dev",
+    "dev:frontend": "pnpm --filter @playstead/frontend dev",
+    "build": "pnpm -r run build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "verify:map-data": "node scripts/verify-map-data.mjs",
+    "migration:run": "pnpm --filter @playstead/backend migration:run"
+  },
+  "packageManager": "pnpm@9.15.5",
+  "engines": {
+    "node": "24.x"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.27.0",
+    "@types/node": "^24.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.33.0",
+    "@typescript-eslint/parser": "^8.33.0",
+    "eslint": "^9.27.0",
+    "eslint-config-prettier": "^10.1.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "globals": "^16.2.0",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.2",
+    "vitest": "^4.1.6"
+  }
+}
