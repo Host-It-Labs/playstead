@@ -95,4 +95,4 @@ Redis does not need backup.
   federate chat, accounts, or scores with other servers.
 - Daily and live target sets are generated with server-side entropy and persisted before play.
   Players must not have database or server-source access during a competitive game; as with any
-  open-source self-hosted trivia game, an installation administrator is inside the trust boundary.
+  source-available self-hosted trivia game, an installation administrator is inside the trust boundary.
