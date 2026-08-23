@@ -8,9 +8,14 @@ import {
   FiMapPin,
   FiRefreshCw,
 } from 'react-icons/fi';
+import { AnimatedScore } from '../components/AnimatedScore';
+import { AtlasSoundToggle } from '../components/AtlasSoundToggle';
 import { GameMap } from '../components/GameMap';
+import { RewardBurst } from '../components/RewardBurst';
 import { Button, Card, ErrorBanner, Eyebrow, LoadingState, Pill } from '../components/ui';
 import { apiRequest, readableError } from '../lib/api';
+import { playAtlasSound } from '../lib/atlasAudio';
+import { roundDifficultyLabel } from '../lib/atlasDifficulty';
 import { formatDistance, formatScore, revealCoordinates } from '../lib/format';
 import { useAppStore } from '../store/appStore';
 import { useAuthStore } from '../store/authStore';
@@ -50,7 +55,9 @@ function ExpeditionSummary({ session }: { session: DailySession }) {
         <FiCompass />
       </div>
       <Eyebrow>Expedition complete</Eyebrow>
-      <h2>{formatScore(session.totalScore)}</h2>
+      <h2>
+        <AnimatedScore value={session.totalScore} animateOnMount />
+      </h2>
       <p className="summary-score-label">points across five drops</p>
       <ol className="round-results">
         {session.results.map((result) => (
@@ -88,12 +95,13 @@ function RevealPanel({
 }) {
   return (
     <div className="reveal-panel">
+      <RewardBurst />
       <div className="reveal-panel__stamp">
         <FiCheck aria-hidden="true" /> Pin scored
       </div>
-      <div>
+      <div className="reveal-heading">
         <Eyebrow>The place was</Eyebrow>
-        <h2>{reveal.target.name}</h2>
+        <h2>{reveal.target.prompt}</h2>
       </div>
       <div className="reveal-stats">
         <div>
@@ -102,7 +110,9 @@ function RevealPanel({
         </div>
         <div>
           <small>Round score</small>
-          <strong>+{formatScore(reveal.score)}</strong>
+          <strong>
+            <AnimatedScore value={reveal.score} prefix="+" animateOnMount />
+          </strong>
         </div>
       </div>
       <p className="reveal-story">{reveal.target.story}</p>
@@ -149,6 +159,7 @@ export function DailyGamePage() {
 
   const submitGuess = async () => {
     if (!token || !session || !draft || !session.target || submitting) return;
+    playAtlasSound('drop-confirm', { intensity: 0.75 });
     setSubmitting(true);
     setError(null);
     try {
@@ -158,6 +169,14 @@ export function DailyGamePage() {
       );
       setSession(response.session);
       setReveal(response.lastReveal);
+      playAtlasSound('correct-location', { intensity: 0.72 });
+      if (response.lastReveal.score > 0) {
+        window.setTimeout(() => {
+          playAtlasSound('score-reward', {
+            intensity: Math.min(0.9, 0.48 + response.lastReveal.score / 900),
+          });
+        }, 220);
+      }
     } catch (reason) {
       setError(readableError(reason));
     } finally {
@@ -166,6 +185,9 @@ export function DailyGamePage() {
   };
 
   const continueExpedition = () => {
+    playAtlasSound(session?.status === 'completed' ? 'expedition-complete' : 'round-end', {
+      intensity: 0.72,
+    });
     setReveal(null);
     setDraft(null);
   };
@@ -225,9 +247,14 @@ export function DailyGamePage() {
           ))}
           <small>{complete ? 'Done' : `${currentRound}/${totalRounds}`}</small>
         </div>
-        <div className="game-score">
-          <small>Total</small>
-          <strong>{formatScore(session.totalScore)}</strong>
+        <div className="game-status">
+          <AtlasSoundToggle />
+          <div className="game-score">
+            <small>Total</small>
+            <strong className={reveal ? 'is-rising' : undefined}>
+              <AnimatedScore value={session.totalScore} />
+            </strong>
+          </div>
         </div>
       </header>
 
@@ -253,14 +280,14 @@ export function DailyGamePage() {
             <div className="prompt-panel">
               <div className="prompt-panel__top">
                 <Pill tone="neutral">
-                  Round {session.target?.round} of {totalRounds}
+                  Round {session.target?.round} · {roundDifficultyLabel(session.target?.round ?? 1)}
                 </Pill>
                 {(session.target?.multiplier ?? 1) > 1 ? (
                   <Pill tone="coral">×{session.target?.multiplier}</Pill>
                 ) : null}
               </div>
               <div className="prompt-kind">
-                <FiMapPin aria-hidden="true" /> {session.target?.kind ?? 'place'}
+                <FiMapPin aria-hidden="true" /> Town &amp; country
               </div>
               <h1>{session.target?.prompt}</h1>
               <p>Move around the map, then tap once to place your draft pin.</p>

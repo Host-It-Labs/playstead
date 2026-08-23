@@ -4,9 +4,10 @@ import type {
   AtlasRoundResult,
   Coordinates,
 } from '@playstead/shared';
-import { ATLAS_TARGETS, type AtlasTarget } from './catalog.js';
+import { ATLAS_DIFFICULTY_TIERS, ATLAS_TARGETS, type AtlasTarget } from './catalog.js';
 
-export const ATLAS_ROUND_COUNT = 5;
+export const ATLAS_ROUND_DIFFICULTIES = ATLAS_DIFFICULTY_TIERS;
+export const ATLAS_ROUND_COUNT = ATLAS_ROUND_DIFFICULTIES.length;
 export const ATLAS_BASE_MAX_SCORE = 100;
 export const ATLAS_ROUND_MULTIPLIERS = [1, 1, 2, 3, 3] as const;
 export const ATLAS_SCORE_CUTOFF_KM = 16_250;
@@ -58,13 +59,27 @@ export function selectTargets(seed: string, count = ATLAS_ROUND_COUNT): AtlasTar
   if (!seed || !Number.isInteger(count) || count < 1 || count > ATLAS_TARGETS.length) {
     throw new RangeError('A seed and a valid target count are required');
   }
-  const shuffled = [...ATLAS_TARGETS];
   const state = { value: hashSeed(seed) };
-  for (let index = shuffled.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(nextRandom(state) * (index + 1));
-    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex]!, shuffled[index]!];
+  const selected = ATLAS_ROUND_DIFFICULTIES.slice(0, Math.min(count, ATLAS_ROUND_COUNT)).map(
+    (difficulty) => {
+      const candidates = ATLAS_TARGETS.filter((target) => target.difficulty === difficulty);
+      const target = candidates[Math.floor(nextRandom(state) * candidates.length)];
+      if (!target) throw new RangeError(`No Atlas Drop targets exist for difficulty ${difficulty}`);
+      return target;
+    },
+  );
+
+  if (count > selected.length) {
+    const selectedIds = new Set(selected.map(({ id }) => id));
+    const remaining = ATLAS_TARGETS.filter(({ id }) => !selectedIds.has(id));
+    for (let index = remaining.length - 1; index > 0; index -= 1) {
+      const swapIndex = Math.floor(nextRandom(state) * (index + 1));
+      [remaining[index], remaining[swapIndex]] = [remaining[swapIndex]!, remaining[index]!];
+    }
+    selected.push(...remaining.slice(0, count - selected.length));
   }
-  return shuffled.slice(0, count);
+
+  return selected;
 }
 
 export function findTarget(targetId: string): AtlasTarget {
@@ -76,7 +91,12 @@ export function findTarget(targetId: string): AtlasTarget {
 export function publicTarget(target: AtlasTarget, round: number): AtlasPublicTarget {
   const multiplier = ATLAS_ROUND_MULTIPLIERS[round - 1];
   if (!multiplier) throw new RangeError('Atlas Drop round is out of bounds');
-  return { prompt: target.prompt, kind: target.kind, round, multiplier };
+  return {
+    prompt: `${target.name}, ${target.country}`,
+    kind: 'city',
+    round,
+    multiplier,
+  };
 }
 
 export function revealedTarget(target: AtlasTarget, round: number): AtlasRevealedTarget {

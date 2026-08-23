@@ -32,7 +32,16 @@ successfully before the backend starts. Caddy waits for `/api/health` to report 
 readiness, sends `/api` and
 `/socket.io` to the backend and serves every other route as the frontend application.
 The map boundary data under `/data` is part of the image; no remote map service is
-needed.
+needed for gameplay. Atlas Drop requests satellite XYZ tiles from
+`/tiles/satellite/{z}/{x}/{y}.jpg` by default in production and automatically keeps the
+bundled graphic map visible when a tile is missing.
+
+To self-host imagery, mount an XYZ tile tree at `/srv/tiles/satellite` in the frontend
+container. To use a hosted imagery service instead, set `VITE_SATELLITE_TILE_URL`,
+`VITE_SATELLITE_TILE_ATTRIBUTION`, and `VITE_SATELLITE_TILE_MAX_ZOOM` before
+`docker compose build`; these are compiled into the frontend. The URL must contain the
+provider's `{z}`, `{x}`, and `{y}` placeholders. Always supply the attribution required by
+the provider. Satellite tiles are presentation-only and never participate in scoring.
 
 ## TLS and an upstream proxy
 
@@ -81,6 +90,8 @@ Redis does not need backup.
   authentication, or Socket.IO errors.
 - Loading `/data/countries.geojson` from the public origin should return a local JSON
   document, not redirect to a third party.
+- If local satellite tiles are configured, loading `/tiles/satellite/0/0/0.jpg` should
+  return an image. A missing tile should return 404, after which the graphic fallback stays visible.
 - Monitor disk usage for the PostgreSQL volume and keep timestamped backups outside
   the Docker host.
 

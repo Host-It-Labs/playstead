@@ -12,7 +12,10 @@ import {
   FiUsers,
 } from 'react-icons/fi';
 import type { Socket } from 'socket.io-client';
+import { AnimatedScore } from '../components/AnimatedScore';
+import { AtlasSoundToggle } from '../components/AtlasSoundToggle';
 import { GameMap } from '../components/GameMap';
+import { RewardBurst } from '../components/RewardBurst';
 import {
   Button,
   Card,
@@ -23,7 +26,9 @@ import {
   SegmentedControl,
 } from '../components/ui';
 import { ApiError, apiRequest, readableError } from '../lib/api';
-import { formatClock, formatScore } from '../lib/format';
+import { roundDifficultyLabel } from '../lib/atlasDifficulty';
+import { playAtlasSound } from '../lib/atlasAudio';
+import { formatClock } from '../lib/format';
 import {
   clearCurrentMatchId,
   readCurrentMatchId,
@@ -76,10 +81,29 @@ function LiveMatch({ initial, onLeave }: { initial: MatchSnapshot; onLeave: () =
     socketRef.current = socket;
     const update = (snapshot: MatchSnapshot) => {
       if (snapshot.id !== initial.id) return;
+      const previousPhase = previousPhaseRef.current;
       setMatch(snapshot);
-      if (shouldResetMatchGuess(previousPhaseRef.current, snapshot)) {
+      if (shouldResetMatchGuess(previousPhase, snapshot)) {
         setDraft(null);
         setSubmittedGuess(null);
+      }
+      if (snapshot.state === 'round_reveal' && previousPhase.state !== 'round_reveal') {
+        playAtlasSound('correct-location', { intensity: 0.7 });
+        const playerScore = snapshot.players.find(
+          (player) => player.userId === user?.id,
+        )?.roundScore;
+        if (playerScore && playerScore > 0) {
+          window.setTimeout(() => {
+            playAtlasSound('score-reward', {
+              intensity: Math.min(0.9, 0.48 + playerScore / 900),
+            });
+          }, 220);
+        }
+        window.setTimeout(() => playAtlasSound('round-end', { intensity: 0.46 }), 620);
+      } else if (snapshot.state === 'finished' && previousPhase.state !== 'finished') {
+        playAtlasSound('expedition-complete', { intensity: 0.78 });
+      } else if (snapshot.state === 'round_open' && snapshot.round > previousPhase.round) {
+        playAtlasSound('round-transition', { intensity: 0.62 });
       }
       previousPhaseRef.current = { state: snapshot.state, round: snapshot.round };
     };
@@ -107,7 +131,7 @@ function LiveMatch({ initial, onLeave }: { initial: MatchSnapshot; onLeave: () =
       socket.off('disconnect', disconnect);
       socket.off('match:update', update);
     };
-  }, [initial.id, token]);
+  }, [initial.id, token, user?.id]);
 
   const send = async (event: string, payload: Record<string, unknown>): Promise<boolean> => {
     const socket = socketRef.current;
@@ -127,6 +151,7 @@ function LiveMatch({ initial, onLeave }: { initial: MatchSnapshot; onLeave: () =
 
   const submitGuess = async () => {
     if (!draft) return;
+    playAtlasSound('drop-confirm', { intensity: 0.75 });
     if (await send('match:guess', draft)) setSubmittedGuess(draft);
   };
 
@@ -252,14 +277,17 @@ function LiveMatch({ initial, onLeave }: { initial: MatchSnapshot; onLeave: () =
         <Pill tone="live">
           <span className="presence-dot" /> {match.players.length} playing
         </Pill>
-        <div className="round-clock">
-          <small>{match.state === 'round_reveal' ? 'Next round' : 'Drop closes'}</small>
-          <strong>
-            {formatClock(
-              match.state === 'round_reveal' ? match.revealEndsAt : match.deadlineAt,
-              now,
-            )}
-          </strong>
+        <div className="game-status">
+          <AtlasSoundToggle />
+          <div className="round-clock">
+            <small>{match.state === 'round_reveal' ? 'Next round' : 'Drop closes'}</small>
+            <strong>
+              {formatClock(
+                match.state === 'round_reveal' ? match.revealEndsAt : match.deadlineAt,
+                now,
+              )}
+            </strong>
+          </div>
         </div>
       </header>
       <div className="game-layout">
@@ -273,6 +301,7 @@ function LiveMatch({ initial, onLeave }: { initial: MatchSnapshot; onLeave: () =
         <aside className="game-rail live-game-rail">
           {match.state === 'finished' ? (
             <div className="live-finish">
+              <RewardBurst />
               <span className="summary-seal" aria-hidden="true">
                 ♛
               </span>
@@ -283,7 +312,9 @@ function LiveMatch({ initial, onLeave }: { initial: MatchSnapshot; onLeave: () =
                   <li key={player.userId}>
                     <span>{index + 1}</span>
                     <strong>{player.handle}</strong>
-                    <b>{formatScore(player.totalScore)}</b>
+                    <b>
+                      <AnimatedScore value={player.totalScore} animateOnMount />
+                    </b>
                   </li>
                 ))}
               </ol>
@@ -293,12 +324,13 @@ function LiveMatch({ initial, onLeave }: { initial: MatchSnapshot; onLeave: () =
             </div>
           ) : match.state === 'round_reveal' && isRevealed(match) ? (
             <div className="reveal-panel">
+              <RewardBurst />
               <div className="reveal-panel__stamp">
                 <FiMapPin /> Answer revealed
               </div>
-              <div>
+              <div className="reveal-heading">
                 <Eyebrow>Round {match.round}</Eyebrow>
-                <h2>{match.target.name}</h2>
+                <h2>{match.target.prompt}</h2>
               </div>
               <p className="reveal-story">{match.target.story}</p>
               <div className="mini-standings">
@@ -306,7 +338,9 @@ function LiveMatch({ initial, onLeave }: { initial: MatchSnapshot; onLeave: () =
                 {sortedPlayers.map((player) => (
                   <div key={player.userId}>
                     <span>{player.handle}</span>
-                    <strong>+{formatScore(player.roundScore ?? 0)}</strong>
+                    <strong>
+                      <AnimatedScore value={player.roundScore ?? 0} prefix="+" animateOnMount />
+                    </strong>
                   </div>
                 ))}
               </div>
@@ -315,14 +349,14 @@ function LiveMatch({ initial, onLeave }: { initial: MatchSnapshot; onLeave: () =
             <div className="prompt-panel">
               <div className="prompt-panel__top">
                 <Pill>
-                  Round {match.round} of {match.totalRounds}
+                  Round {match.round} · {roundDifficultyLabel(match.round)}
                 </Pill>
                 {match.target && match.target.multiplier > 1 ? (
                   <Pill tone="coral">×{match.target.multiplier}</Pill>
                 ) : null}
               </div>
               <div className="prompt-kind">
-                <FiMapPin /> {match.target?.kind ?? 'place'}
+                <FiMapPin /> Town &amp; country
               </div>
               <h1>{match.target?.prompt ?? 'Waiting for the next place…'}</h1>
               <div className={draft ? 'pin-status pin-status--ready' : 'pin-status'}>

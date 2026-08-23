@@ -8,10 +8,15 @@
 
 	@backend path /api /api/* /socket.io /socket.io/*
 	handle @backend {
-		reverse_proxy backend:3000
+		reverse_proxy backend:3005
 	}
 
 	handle /data/* {
+		root * /srv
+		file_server
+	}
+
+	handle /tiles/* {
 		root * /srv
 		file_server
 	}

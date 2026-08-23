@@ -12,7 +12,8 @@ The experience is built around the whole table, not only the game board:
 - daily, all-time, and multiplayer leaderboards;
 - the Commons, an installation-wide real-time chat;
 - private circles with names and invite codes; and
-- a fully local world map with no required map, tile, analytics, or cloud service.
+- a full-world satellite map that sharpens as players zoom, with a fully local fallback and no
+  required analytics service.
 
 ## Run with Docker
 
@@ -64,7 +65,10 @@ The frontend runs on <http://localhost:5174> and the backend on
 <http://localhost:3005>. Development PostgreSQL uses port `55432` and Redis uses
 `56379` to avoid common local service collisions. Development may override
 `VITE_API_URL` and `VITE_SOCKET_URL`; production deliberately uses same-origin `/api`
-and `/socket.io` through Caddy.
+and `/socket.io` through Caddy. Local development uses EOX Sentinel-2 imagery by
+default. Set
+`VITE_SATELLITE_TILE_URL`, `VITE_SATELLITE_TILE_ATTRIBUTION`, and
+`VITE_SATELLITE_TILE_MAX_ZOOM` to use another XYZ satellite source.
 
 Useful checks:
 
@@ -80,7 +84,7 @@ pnpm verify:map-data
 
 - `packages/frontend`: React, TypeScript, Vite, Zustand, MapLibre, and Socket.IO client
 - `packages/backend`: NestJS, TypeORM, PostgreSQL, Redis, and Socket.IO
-- `packages/frontend/public/data`: vendored Natural Earth country geometry
+- `packages/frontend/public/data`: vendored Natural Earth fallback geometry
 - `docs/HTTP_AND_SOCKET_CONTRACT.md`: player-safe HTTP and real-time protocol
 - `docs/operations/SELF_HOSTING.md`: deployment and operations runbook
 
