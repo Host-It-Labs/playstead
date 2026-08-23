@@ -3,19 +3,35 @@ import { ATLAS_TARGETS } from './catalog.js';
 import {
   ATLAS_BASE_MAX_SCORE,
   ATLAS_ROUND_COUNT,
+  ATLAS_ROUND_DIFFICULTIES,
   ATLAS_ROUND_MULTIPLIERS,
   distanceInKm,
+  publicTarget,
   scoreGuess,
   selectTargets,
 } from './game.js';
 
 describe('Atlas Drop catalog', () => {
-  it('contains a broad original target set', () => {
+  it('contains a broad, unique town and city set across all difficulty tiers', () => {
     expect(ATLAS_TARGETS.length).toBeGreaterThanOrEqual(30);
     expect(new Set(ATLAS_TARGETS.map(({ id }) => id)).size).toBe(ATLAS_TARGETS.length);
-    expect(new Set(ATLAS_TARGETS.map(({ kind }) => kind))).toEqual(
-      new Set(['city', 'landmark', 'nature']),
+    expect(new Set(ATLAS_TARGETS.map(({ difficulty }) => difficulty))).toEqual(
+      new Set(ATLAS_ROUND_DIFFICULTIES),
     );
+    for (const difficulty of ATLAS_ROUND_DIFFICULTIES) {
+      expect(
+        ATLAS_TARGETS.filter((target) => target.difficulty === difficulty).length,
+      ).toBeGreaterThan(1);
+    }
+  });
+
+  it('publishes only the exact town or city name and country', () => {
+    for (const target of ATLAS_TARGETS) {
+      expect(publicTarget(target, target.difficulty)).toMatchObject({
+        prompt: `${target.name}, ${target.country}`,
+        kind: 'city',
+      });
+    }
   });
 });
 
@@ -33,6 +49,15 @@ describe('seeded target selection', () => {
       expect(new Set(ids).size).toBe(ATLAS_ROUND_COUNT);
     }
     expect(new Set(selectTargets('a-large-table', 30).map(({ id }) => id)).size).toBe(30);
+  });
+
+  it('selects one successively harder tier for each of the five rounds', () => {
+    expect(ATLAS_ROUND_COUNT).toBe(5);
+    for (let seed = 1; seed <= 31; seed += 1) {
+      expect(selectTargets(`difficulty-seed-${seed}`).map(({ difficulty }) => difficulty)).toEqual(
+        ATLAS_ROUND_DIFFICULTIES,
+      );
+    }
   });
 
   it('varies selections between private seeds', () => {

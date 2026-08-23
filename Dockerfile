@@ -13,6 +13,14 @@ RUN apk add --no-cache g++ make python3
 COPY . .
 
 RUN pnpm install --frozen-lockfile
+
+ARG VITE_SATELLITE_TILE_URL
+ARG VITE_SATELLITE_TILE_ATTRIBUTION
+ARG VITE_SATELLITE_TILE_MAX_ZOOM
+ENV VITE_SATELLITE_TILE_URL=$VITE_SATELLITE_TILE_URL
+ENV VITE_SATELLITE_TILE_ATTRIBUTION=$VITE_SATELLITE_TILE_ATTRIBUTION
+ENV VITE_SATELLITE_TILE_MAX_ZOOM=$VITE_SATELLITE_TILE_MAX_ZOOM
+
 RUN pnpm build
 
 FROM node:24-alpine AS backend
@@ -29,7 +37,7 @@ RUN corepack enable && corepack prepare pnpm@9.15.5 --activate
 # exactly the same way as they do in CI. The build stage contains no source secrets.
 COPY --from=build /app /app
 
-EXPOSE 3000
+EXPOSE 3005
 
 CMD ["pnpm", "--filter", "@playstead/backend", "start:prod"]
 

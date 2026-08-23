@@ -33,7 +33,7 @@ type SocketAcknowledgement<T = undefined> = (result: SocketAck<T>) => void;
 
 @WebSocketGateway({
   path: '/socket.io',
-  cors: { origin: process.env.APP_ORIGIN ?? 'http://localhost:5173' },
+  cors: { origin: process.env.APP_ORIGIN ?? 'http://localhost:5174' },
 })
 export class RealtimeGateway implements OnGatewayConnection {
   @WebSocketServer() server!: Server;

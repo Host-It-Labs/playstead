@@ -34,7 +34,7 @@ services:
     restart: 'no'
     environment: &backend-environment
       NODE_ENV: production
-      PORT: 3000
+      PORT: 3005
       APP_ORIGIN: ${APP_ORIGIN:-http://localhost:8080}
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
       DATABASE_URL: postgresql://${POSTGRES_USER:-playstead}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-playstead}
@@ -60,9 +60,9 @@ services:
       redis:
         condition: service_healthy
     expose:
-      - '3000'
+      - '3005'
     healthcheck:
-      test: ['CMD', 'wget', '--quiet', '--tries=1', '--spider', 'http://127.0.0.1:3000/api/health']
+      test: ['CMD', 'wget', '--quiet', '--tries=1', '--spider', 'http://127.0.0.1:3005/api/health']
       interval: 10s
       timeout: 5s
       retries: 12
@@ -72,6 +72,10 @@ services:
     build:
       context: .
       target: frontend
+      args:
+        VITE_SATELLITE_TILE_URL: ${VITE_SATELLITE_TILE_URL:-}
+        VITE_SATELLITE_TILE_ATTRIBUTION: ${VITE_SATELLITE_TILE_ATTRIBUTION:-}
+        VITE_SATELLITE_TILE_MAX_ZOOM: ${VITE_SATELLITE_TILE_MAX_ZOOM:-}
     restart: unless-stopped
     depends_on:
       backend:

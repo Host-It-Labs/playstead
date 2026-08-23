@@ -126,6 +126,9 @@ p {
 .button:hover:not(:disabled) {
   transform: translateY(-1px);
 }
+.button:active:not(:disabled) {
+  transform: translateY(1px) scale(0.985);
+}
 .button:disabled {
   opacity: 0.45;
 }
@@ -1085,6 +1088,7 @@ textarea::placeholder {
 .round-progress > span.is-current {
   background: var(--coral);
   box-shadow: 0 0 10px rgba(240, 120, 98, 0.35);
+  animation: progress-breathe 1.8s ease-in-out infinite;
 }
 .round-progress small {
   margin-left: 0.35rem;
@@ -1096,9 +1100,45 @@ textarea::placeholder {
   justify-items: end;
   min-width: 5rem;
 }
+.game-status {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.65rem;
+}
+.sound-toggle {
+  display: grid;
+  width: 2.35rem;
+  height: 2.35rem;
+  flex: 0 0 auto;
+  place-items: center;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--parchment-dim);
+  background: rgba(245, 238, 216, 0.04);
+  transition:
+    color 0.18s ease,
+    border-color 0.18s ease,
+    background-color 0.18s ease,
+    transform 0.18s ease;
+}
+.sound-toggle:hover {
+  color: var(--parchment);
+  border-color: rgba(114, 196, 210, 0.4);
+  background: rgba(114, 196, 210, 0.08);
+  transform: translateY(-1px);
+}
+.sound-toggle:active {
+  transform: translateY(1px) scale(0.96);
+}
 .game-score strong,
 .round-clock strong {
   font-size: 1.15rem;
+}
+.game-score strong.is-rising {
+  color: var(--gold);
+  animation: score-rise 0.78s cubic-bezier(0.2, 0.85, 0.25, 1);
 }
 .round-clock strong {
   color: var(--sky);
@@ -1114,6 +1154,17 @@ textarea::placeholder {
   min-height: 25rem;
   overflow: hidden;
   background: #8dc8d3;
+}
+.game-map-shell::after {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  pointer-events: none;
+  content: '';
+  box-shadow: inset 0 0 70px rgba(3, 14, 12, 0.18);
+}
+.game-map-shell.is-revealing::after {
+  animation: map-reveal-glow 1.4s ease-out;
 }
 .game-map {
   position: absolute;
@@ -1167,7 +1218,7 @@ textarea::placeholder {
   place-items: center;
   border: 4px solid var(--parchment);
   border-radius: 50% 50% 50% 0;
-  transform: rotate(-45deg);
+  rotate: -45deg;
   box-shadow: 4px 5px 14px rgba(5, 20, 17, 0.35);
 }
 .map-marker span {
@@ -1183,8 +1234,17 @@ textarea::placeholder {
 .map-marker--guess {
   background: var(--coral);
 }
+.map-marker--guess.is-reveal-origin {
+  animation: guess-lock 0.48s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
 .map-marker--answer {
   background: var(--moss-700);
+}
+.map-marker--answer.is-revealing {
+  animation: answer-land 0.68s 0.55s cubic-bezier(0.2, 1.25, 0.35, 1) both;
+}
+.map-marker--answer.is-revealed {
+  filter: drop-shadow(0 0 10px rgba(182, 200, 153, 0.55));
 }
 .map-marker--answer::after {
   position: absolute;
@@ -1196,22 +1256,36 @@ textarea::placeholder {
 }
 .map-marker span,
 .map-marker::after {
-  transform: rotate(45deg);
+  rotate: 45deg;
 }
 @keyframes pin-in {
   from {
     opacity: 0;
-    transform: translateY(-1rem) rotate(-45deg);
+    translate: 0 -1rem;
+    scale: 0.72;
   }
 }
 @keyframes ping {
   0% {
     opacity: 0.7;
-    transform: rotate(45deg) scale(0.65);
+    scale: 0.65;
   }
   100% {
     opacity: 0;
-    transform: rotate(45deg) scale(1.4);
+    scale: 1.4;
+  }
+}
+@keyframes guess-lock {
+  42% {
+    filter: drop-shadow(0 0 12px rgba(240, 120, 98, 0.65));
+    scale: 1.18;
+  }
+}
+@keyframes answer-land {
+  from {
+    opacity: 0;
+    translate: 0 -1.2rem;
+    scale: 0.55;
   }
 }
 .game-rail {
@@ -1226,9 +1300,16 @@ textarea::placeholder {
 .reveal-panel,
 .expedition-summary,
 .live-finish {
+  position: relative;
   display: flex;
   min-height: 100%;
   flex-direction: column;
+}
+.reveal-panel,
+.expedition-summary,
+.live-finish {
+  isolation: isolate;
+  animation: panel-arrive 0.42s cubic-bezier(0.2, 0.8, 0.25, 1) both;
 }
 .prompt-panel__top {
   display: flex;
@@ -1274,6 +1355,7 @@ textarea::placeholder {
   border-style: solid;
   border-color: rgba(182, 200, 153, 0.3);
   background: rgba(182, 200, 153, 0.06);
+  animation: ready-settle 0.36s ease-out;
 }
 .pin-status__icon {
   display: grid;
@@ -1315,8 +1397,9 @@ textarea::placeholder {
   background: rgba(182, 200, 153, 0.1);
   font-size: 0.7rem;
   font-weight: 800;
+  animation: stamp-settle 0.48s 0.12s cubic-bezier(0.2, 1.4, 0.4, 1) both;
 }
-.reveal-panel > div:nth-child(2) {
+.reveal-heading {
   margin-top: auto;
 }
 .reveal-panel h2 {
@@ -1337,6 +1420,10 @@ textarea::placeholder {
   border: 1px solid var(--border);
   border-radius: 12px;
   background: rgba(5, 20, 17, 0.22);
+  animation: stat-rise 0.42s 0.18s ease-out both;
+}
+.reveal-stats > div:nth-child(2) {
+  animation-delay: 0.26s;
 }
 .reveal-stats small {
   color: var(--parchment-dim);
@@ -1368,6 +1455,66 @@ textarea::placeholder {
   background: var(--gold);
   box-shadow: 0 0 0 8px rgba(227, 183, 91, 0.08);
   font-size: 1.4rem;
+  animation: seal-settle 0.72s cubic-bezier(0.2, 1.25, 0.35, 1) both;
+}
+.reward-burst {
+  position: absolute;
+  top: 43%;
+  left: 50%;
+  z-index: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+.reward-burst i {
+  --spark-x: 0px;
+  --spark-y: -72px;
+  position: absolute;
+  width: 0.36rem;
+  height: 0.36rem;
+  border-radius: 2px;
+  background: var(--gold);
+  box-shadow: 0 0 12px rgba(227, 183, 91, 0.45);
+  animation: reward-spark 0.82s 0.12s ease-out both;
+}
+.reward-burst i:nth-child(2n) {
+  background: var(--coral);
+}
+.reward-burst i:nth-child(3n) {
+  border-radius: 50%;
+  background: var(--sky);
+}
+.reward-burst i:nth-child(1) {
+  --spark-x: -70px;
+  --spark-y: -54px;
+}
+.reward-burst i:nth-child(2) {
+  --spark-x: -92px;
+  --spark-y: 8px;
+}
+.reward-burst i:nth-child(3) {
+  --spark-x: -52px;
+  --spark-y: 60px;
+}
+.reward-burst i:nth-child(4) {
+  --spark-x: 4px;
+  --spark-y: 76px;
+}
+.reward-burst i:nth-child(5) {
+  --spark-x: 62px;
+  --spark-y: 55px;
+}
+.reward-burst i:nth-child(6) {
+  --spark-x: 92px;
+  --spark-y: 3px;
+}
+.reward-burst i:nth-child(7) {
+  --spark-x: 66px;
+  --spark-y: -57px;
+}
+.reward-burst i:nth-child(8) {
+  --spark-x: 0px;
+  --spark-y: -78px;
 }
 .expedition-summary h2 {
   margin: 0;
@@ -1392,6 +1539,21 @@ textarea::placeholder {
   padding: 0.6rem 0;
   border-top: 1px solid rgba(245, 238, 216, 0.08);
   text-align: left;
+}
+.expedition-summary .round-results li {
+  animation: result-in 0.34s ease-out both;
+}
+.expedition-summary .round-results li:nth-child(2) {
+  animation-delay: 0.06s;
+}
+.expedition-summary .round-results li:nth-child(3) {
+  animation-delay: 0.12s;
+}
+.expedition-summary .round-results li:nth-child(4) {
+  animation-delay: 0.18s;
+}
+.expedition-summary .round-results li:nth-child(5) {
+  animation-delay: 0.24s;
 }
 .result-round {
   display: grid;
@@ -2381,7 +2543,7 @@ textarea::placeholder {
     bottom: 0.6rem;
     font-size: 0.58rem;
   }
-  .reveal-panel > div:nth-child(2) {
+  .reveal-heading {
     margin-top: 0;
   }
   .reveal-panel h2 {
@@ -2587,6 +2749,87 @@ textarea::placeholder {
   }
   .segmented__button {
     padding-inline: 0.45rem;
+  }
+}
+
+@keyframes progress-breathe {
+  50% {
+    box-shadow: 0 0 16px rgba(240, 120, 98, 0.62);
+    transform: scaleX(1.08);
+  }
+}
+
+@keyframes score-rise {
+  38% {
+    text-shadow: 0 0 20px rgba(227, 183, 91, 0.42);
+    transform: translateY(-0.12rem) scale(1.2);
+  }
+}
+
+@keyframes panel-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(0.7rem);
+  }
+}
+
+@keyframes map-reveal-glow {
+  35% {
+    box-shadow:
+      inset 0 0 80px rgba(3, 14, 12, 0.2),
+      inset 0 0 28px rgba(227, 183, 91, 0.22);
+  }
+}
+
+@keyframes ready-settle {
+  45% {
+    border-color: rgba(182, 200, 153, 0.62);
+    transform: scale(1.015);
+  }
+}
+
+@keyframes stamp-settle {
+  from {
+    opacity: 0;
+    transform: translateY(-0.4rem) rotate(-3deg) scale(0.85);
+  }
+}
+
+@keyframes stat-rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem);
+  }
+}
+
+@keyframes seal-settle {
+  from {
+    opacity: 0;
+    transform: rotate(-12deg) scale(0.55);
+  }
+  65% {
+    transform: rotate(2deg) scale(1.08);
+  }
+}
+
+@keyframes reward-spark {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.2) rotate(0deg);
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--spark-x), var(--spark-y)) scale(0.75) rotate(150deg);
+  }
+}
+
+@keyframes result-in {
+  from {
+    opacity: 0;
+    transform: translateX(0.6rem);
   }
 }
 

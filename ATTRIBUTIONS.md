@@ -19,6 +19,18 @@
 The vendored copy lets a default Playstead installation render Atlas Drop without
 contacting a map, tile, or analytics service.
 
+## Sentinel-2 cloudless development imagery
+
+The local development configuration uses the EOX Sentinel-2 cloudless 2020 WMTS layer.
+It contains modified Copernicus Sentinel data from 2020 and is fetched only when the
+development tile URL is enabled. Production self-hosting defaults to the local
+`/tiles/satellite` path instead; operators are responsible for the license and attribution
+of any imagery source they configure.
+
+- Layer: <https://s2maps.eu/>
+- Provider: <https://eox.at/>
+- Data programme: <https://dataspace.copernicus.eu/>
+
 ## Product inspiration
 
 Atlas Drop is an independent implementation inspired by the map-tapping geography

@@ -4,7 +4,8 @@
 
 Playstead should feel like a warm tabletop gathering rather than a competitive esports
 dashboard. Use deep ink and moss surfaces, parchment text, coral for decisive actions, and
-sky blue for live presence. Maps are graphic and legible rather than photorealistic.
+sky blue for live presence. Atlas Drop uses satellite imagery for geographic texture, with
+the graphic country map retained as a legible offline and tile-failure fallback.
 
 ## Layout
 
@@ -22,6 +23,8 @@ sky blue for live presence. Maps are graphic and legible rather than photorealis
 - Every icon-only control needs an accessible label and native `title`.
 - Keyboard navigation and visible focus states are required.
 - Animations must respect `prefers-reduced-motion`.
+- Feedback sounds stay brief and restrained, default to on, and always offer a persistent mute.
+- Reveals may animate the camera, answer line, markers, and score, but must not delay the result.
 
 ## Copy
 

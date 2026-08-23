@@ -9,11 +9,11 @@ async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
   app.enableShutdownHooks();
   app.setGlobalPrefix('api');
-  app.enableCors({ origin: process.env.APP_ORIGIN ?? 'http://localhost:5173', credentials: true });
-  const redisAdapter = new RedisIoAdapter(app, process.env.REDIS_URL ?? 'redis://localhost:6379');
+  app.enableCors({ origin: process.env.APP_ORIGIN ?? 'http://localhost:5174', credentials: true });
+  const redisAdapter = new RedisIoAdapter(app, process.env.REDIS_URL ?? 'redis://localhost:56379');
   await redisAdapter.connect();
   app.useWebSocketAdapter(redisAdapter);
-  await app.listen(Number(process.env.PORT ?? 3000));
+  await app.listen(Number(process.env.PORT ?? 3005));
 }
 
 void bootstrap();
