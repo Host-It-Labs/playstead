@@ -41,23 +41,30 @@ Requirements:
 
 - Node.js 24
 - pnpm 9.15.5 (Corepack is recommended)
-- PostgreSQL 17
-- Redis 7
+- Docker with Compose
 
-Create a development environment and install dependencies:
+In Codex for the ChatGPT desktop app, select the repository-local **start project**
+action. It installs the local database services, applies migrations, and opens a tmux
+session with hot-reloading backend and frontend panes. Each Codex worktree receives
+its own ports and Compose project.
+
+For manual development, create an environment, install dependencies, and start the
+database services:
 
 ```sh
 cp .env.example .env
 corepack enable
 pnpm install
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d postgres redis
 pnpm migration:run
 pnpm dev
 ```
 
-The frontend runs on <http://localhost:5173> and the backend on
-<http://localhost:3000>. Development may override `VITE_API_URL` and
-`VITE_SOCKET_URL`; production deliberately uses same-origin `/api` and `/socket.io`
-through Caddy.
+The frontend runs on <http://localhost:5174> and the backend on
+<http://localhost:3005>. Development PostgreSQL uses port `55432` and Redis uses
+`56379` to avoid common local service collisions. Development may override
+`VITE_API_URL` and `VITE_SOCKET_URL`; production deliberately uses same-origin `/api`
+and `/socket.io` through Caddy.
 
 Useful checks:
 
@@ -83,9 +90,12 @@ Redis is limited to presence, fan-out, and disposable live coordination.
 
 ## Data and licensing
 
-Playstead source code is available under the [MIT License](LICENSE). The bundled
-Natural Earth boundaries are public-domain data; exact source, version, and checksum
-details are in [ATTRIBUTIONS.md](ATTRIBUTIONS.md).
+Playstead is source-available and self-hostable under the
+[PolyForm Noncommercial License 1.0.0](LICENSE). Noncommercial use, modification,
+and distribution are permitted under those terms. Commercial use or distribution
+requires separate permission from the licensor. The bundled Natural Earth boundaries
+are public-domain data; exact source, version, and checksum details are in
+[ATTRIBUTIONS.md](ATTRIBUTIONS.md).
 
 Atlas Drop is an original, independent implementation inspired by the map-tapping
 geography game genre. It does not include MapTap code, branding, or visual assets.
