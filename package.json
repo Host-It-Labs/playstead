@@ -1,6 +1,17 @@
 {
   "name": "playstead",
   "version": "0.1.0",
+  "description": "A source-available, self-hostable platform for lightweight social games.",
+  "author": "William Guinaudie",
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Host-It-Labs/playstead.git"
+  },
+  "homepage": "https://github.com/Host-It-Labs/playstead#readme",
+  "bugs": {
+    "url": "https://github.com/Host-It-Labs/playstead/issues"
+  },
   "private": true,
   "type": "module",
   "workspaces": [
