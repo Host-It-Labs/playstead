@@ -22,7 +22,7 @@
     "dev:backend": "pnpm --filter @playstead/backend dev",
     "dev:frontend": "pnpm --filter @playstead/frontend dev",
     "build": "pnpm -r run build",
-    "test": "vitest run",
+    "test": "pnpm --filter @playstead/shared build && pnpm --filter @playstead/game-atlas-drop build && vitest run",
     "test:watch": "vitest",
     "lint": "eslint .",
     "format": "prettier --write .",
